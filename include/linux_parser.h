@@ -6,7 +6,10 @@
 #include <string>
 #include <unistd.h>
 
+#define printVariableNameAndValue(x) std::cout << "Name of variable **" <<(#x)<<"** and the value of variable is => "<<x<<"\n"
+
 namespace LinuxParser {
+
 // Paths
 const std::string kProcDirectory{"/proc/"};
 const std::string kCmdlineFilename{"/cmdline"};

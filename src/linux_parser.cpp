@@ -37,6 +37,7 @@ string LinuxParser::OperatingSystem() {
           }
         }
       }
+      filestream.close();
     }
     return value;
   }
@@ -59,7 +60,9 @@ string LinuxParser::Kernel() {
       std::getline(stream, line);
       std::istringstream linestream(line);
       linestream >> os >> version >> kernel;
+      stream.close();
     }
+
     return kernel;
   }
   catch(const std::exception& e)
@@ -100,22 +103,20 @@ vector<int> LinuxParser::Pids() {
 // Read and return the system memory utilization
 float LinuxParser::MemoryUtilization() 
 { 
-  int mem = 0;
+  float mem = 0.0;
   try
   {
-    int totalMem, freeMem, buffersMem, cachedMem;
+    long totalMem, freeMem, buffersMem, cachedMem;
     //int availableMem;
 
     std::string line;
 
     // get and read the /proc/meminfo file
-    std::ifstream of ( kProcDirectory + kMeminfoFilename );
+    std::ifstream stream ( kProcDirectory + kMeminfoFilename );
 
-    if ( of.is_open() )
-    {
+    if ( stream.is_open() ) {
       // extract and store line by line until the end of the file
-      while ( std::getline( of, line ) )
-      {
+      while ( std::getline( stream, line ) ) {
         // replace : with blank character
         std::replace( line.begin(), line.end(), ':', ' ' );
 
@@ -148,12 +149,13 @@ float LinuxParser::MemoryUtilization()
             cachedMem = l_value;
         }
       }
+      stream.close();
     }
-
+    
     if ( totalMem == 0 )
       throw std::invalid_argument("argument out of bounds");
     else
-      mem = ( totalMem - (freeMem + buffersMem + cachedMem) )/ totalMem;
+      mem = (( totalMem - (freeMem + buffersMem + cachedMem) )/ static_cast<float>(totalMem));
 
     return mem;
   }
@@ -178,8 +180,7 @@ long LinuxParser::UpTime() {
     // get and read the /proc/stat filename
     std::ifstream stream(kProcDirectory + kUptimeFilename);
     
-    if (stream.is_open()) 
-    {
+    if (stream.is_open()) {
       std::getline(stream, line);
 
       // split line
@@ -188,6 +189,8 @@ long LinuxParser::UpTime() {
       // linestream >> str_utime >> str_stime;
 
       linestream >> str_utime;
+
+      stream.close();
     }
 
     long l_utime = stol(str_utime);
@@ -238,8 +241,7 @@ LinuxParser::CPUData LinuxParser::CpuUtilization( std::string cpu_name ) {
     // get and read the /proc/stat filename
     std::ifstream stream(kProcDirectory + kStatFilename);
     
-    if (stream.is_open()) 
-    {
+    if (stream.is_open()) {
       // extract and store line by line until the end of the file
       while ( std::getline( stream, line ) )
       {
@@ -297,6 +299,7 @@ LinuxParser::CPUData LinuxParser::CpuUtilization( std::string cpu_name ) {
           break;
         }
       }
+      stream.close();
     }
 
     return cpu;
@@ -317,12 +320,11 @@ int LinuxParser::TotalProcesses()
     std::string line;
   
     // get and read the /proc/stat filename
-    std::ifstream of ( kProcDirectory + kStatFilename );
+    std::ifstream stream ( kProcDirectory + kStatFilename );
 
-    if ( of.is_open() )
-    {
+    if ( stream.is_open() ) {
       // extract and store line by line until the end of the file
-      while ( std::getline( of, line ) )
+      while ( std::getline( stream, line ) )
       {
         // split line
         std::istringstream ss ( line );
@@ -340,6 +342,7 @@ int LinuxParser::TotalProcesses()
             total_proc = i_value;
         }
       }
+      stream.close();
     }
 
     return total_proc; 
@@ -360,12 +363,11 @@ int LinuxParser::RunningProcesses() {
     std::string line;
 
     // get and read the /proc/stat filename
-    std::ifstream of ( kProcDirectory + kStatFilename );
+    std::ifstream stream ( kProcDirectory + kStatFilename );
 
-    if ( of.is_open() )
-    {
+    if ( stream.is_open() ) {
       // extract and store line by line until the end of the file
-      while ( std::getline( of, line ) )
+      while ( std::getline( stream, line ) )
       {
         // split line
         std::istringstream ss ( line );
@@ -383,6 +385,7 @@ int LinuxParser::RunningProcesses() {
             procs_running = i_value;
         }
       }
+      stream.close();
     }
 
     return procs_running;
@@ -402,8 +405,10 @@ string LinuxParser::Command( int pid ) {
   // get and read the /proc/stat filename
   std::ifstream stream(kProcDirectory + std::to_string(pid) + kCmdlineFilename);
   
-  if (stream.is_open()) 
+  if (stream.is_open()) {
     std::getline(stream, line);
+    stream.close();
+  }
 
   return line; 
 }
@@ -416,11 +421,9 @@ string LinuxParser::Ram( int pid ) {
   // get and read the /proc/stat filename
   std::ifstream stream(kProcDirectory + std::to_string(pid) + kStatusFilename);
 
-  if ( stream.is_open() )
-  {
+  if ( stream.is_open() ) {
     // extract and store line by line until the end of the file
-    while ( std::getline( stream, line ) )
-    {
+    while ( std::getline( stream, line ) ) {
       // replace : with blank character
       std::replace( line.begin(), line.end(), ':', ' ' );
 
@@ -433,7 +436,7 @@ string LinuxParser::Ram( int pid ) {
       // get key and value
       while ( ss >> key >> str_value ) {
 
-        if ( key == "VmSize" ) {
+        if ( key == "VmData" ) {
           // calculate the ram in MB
           l_value = stoi(str_value) / 1024;
 
@@ -441,6 +444,7 @@ string LinuxParser::Ram( int pid ) {
         }
       }
     }
+    stream.close();
   }
   return ram; 
 }
@@ -453,11 +457,9 @@ string LinuxParser::Uid( int pid ) {
   // get and read the /proc/stat filename
   std::ifstream stream(kProcDirectory + std::to_string(pid) + kStatusFilename);
 
-  if ( stream.is_open() )
-  {
+  if ( stream.is_open() ) {
     // extract and store line by line until the end of the file
-    while ( std::getline( stream, line ) )
-    {
+    while ( std::getline( stream, line ) ) {
       // replace : with blank character
       std::replace( line.begin(), line.end(), ':', ' ' );
 
@@ -471,6 +473,7 @@ string LinuxParser::Uid( int pid ) {
         }
       }
     }
+    stream.close();
   }
 
   return uid;
@@ -486,11 +489,9 @@ string LinuxParser::User( int pid ) {
   // get and read the /proc/stat filename
   std::ifstream stream(kPasswordPath);
 
-  if ( stream.is_open() )
-  {
+  if ( stream.is_open() ) {
     // extract and store line by line until the end of the file
-    while ( std::getline( stream, line ) )
-    {
+    while ( std::getline( stream, line ) ) {
       // replace : with blank character
       std::replace( line.begin(), line.end(), ':', ' ' );
 
@@ -506,6 +507,7 @@ string LinuxParser::User( int pid ) {
       }
       
     }
+    stream.close();
   }
   return user;
 }
@@ -540,11 +542,9 @@ std::vector<std::string> LinuxParser::readStatFile ( const int pid ) {
   // get and read the /proc/stat filename
   std::ifstream stream(kProcDirectory + std::to_string(pid) + kStatFilename);
 
-  if ( stream.is_open() )
-  {
+  if ( stream.is_open() ) {
     // extract and store line by line until the end of the file
-    while ( std::getline( stream, line ) )
-    {
+    while ( std::getline( stream, line ) ) {
       // split line
       std::istringstream ss ( line );
 
@@ -553,6 +553,7 @@ std::vector<std::string> LinuxParser::readStatFile ( const int pid ) {
         procData.push_back(str_value);
       }
     }
+    stream.close();
   }
 
   return procData;
@@ -566,11 +567,9 @@ string LinuxParser::State( int pid ) {
   // get and read the /proc/stat filename
   std::ifstream stream(kProcDirectory + std::to_string(pid) + kStatusFilename);
 
-  if ( stream.is_open() )
-  {
+  if ( stream.is_open() ) {
     // extract and store line by line until the end of the file
-    while ( std::getline( stream, line ) )
-    {
+    while ( std::getline( stream, line ) ) {
       // replace : with blank character
       std::replace( line.begin(), line.end(), ':', ' ' );
 
@@ -584,6 +583,7 @@ string LinuxParser::State( int pid ) {
         }
       }
     }
+    stream.close();
   }
 
   return state;

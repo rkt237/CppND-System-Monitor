@@ -36,27 +36,19 @@ float Processor::Utilization()  {
     try
     {
         // Idle-Jiffies is idle + iowait
-        idle_jiffies_    = LinuxParser::IdleJiffies( cpu_name_ );
+        idle_jiffies_        = LinuxParser::IdleJiffies( cpu_name_ );
 
         // NonIdle (active) Jiffies is user + nice + system_all
-        long active = LinuxParser::ActiveJiffies( cpu_name_ );
+        long active_jiffies_ = LinuxParser::ActiveJiffies( cpu_name_ );
 
         // total jiffies
-        long Total   = LinuxParser::Jiffies( cpu_name_ );
-
-        // differentiate: actual value minus the previous one
-        long total_d = Total - jiffies_;
-        long active_d  = active - active_jiffies_;
+        long jiffies_        = LinuxParser::Jiffies( cpu_name_ );
 
         // measurement interval = active time units / total time units
-        if ( total_d > 0 )
-            cpu_utilization = active_d/total_d;
+        if ( jiffies_ > 0 )
+            cpu_utilization = active_jiffies_/static_cast<float>(jiffies_);
         else
-            cpu_utilization = 0;
-
-        // store the new value
-        jiffies_        = Total;
-        active_jiffies_ = active;
+            cpu_utilization = 0.0;
 
         return cpu_utilization;
     }
