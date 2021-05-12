@@ -39,10 +39,10 @@ float Processor::Utilization()  {
         idle_jiffies_        = LinuxParser::IdleJiffies( cpu_name_ );
 
         // NonIdle (active) Jiffies is user + nice + system_all
-        long active_jiffies_ = LinuxParser::ActiveJiffies( cpu_name_ );
+        active_jiffies_ = LinuxParser::ActiveJiffies( cpu_name_ );
 
         // total jiffies
-        long jiffies_        = LinuxParser::Jiffies( cpu_name_ );
+        jiffies_        = LinuxParser::Jiffies( cpu_name_ );
 
         // measurement interval = active time units / total time units
         if ( jiffies_ > 0 )
