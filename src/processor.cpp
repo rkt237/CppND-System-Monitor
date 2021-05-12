@@ -46,7 +46,7 @@ float Processor::Utilization()  {
 
         // measurement interval = active time units / total time units
         if ( jiffies_ > 0 )
-            cpu_utilization = active_jiffies_/static_cast<float>(jiffies_);
+            cpu_utilization = (jiffies_ - idle_jiffies_)/static_cast<float>(jiffies_);
         else
             cpu_utilization = 0.0;
 
